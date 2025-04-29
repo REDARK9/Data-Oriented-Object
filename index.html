@@ -1,0 +1,1382 @@
+<html><head><style>body {
+   color: black;
+}
+</style></head><body><p><img src="_page_0_Picture_0.jpeg" alt=""></p>
+<h2 id="-unity-2022-lts-edition-e-book"><strong>UNITY 2022 LTS EDITION</strong> ⟶ E-BOOK</h2>
+<p><img src="_page_0_Picture_2.jpeg" alt=""></p>
+<p>Introduction to the Data-Oriented Technology Stack for advanced Unity developers</p>
+<h1 id="-contents-"><strong>Contents</strong></h1>
+<table>
+<thead>
+<tr>
+<th>Introduction 4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>About performance 5</td>
+</tr>
+<tr>
+<td>DOTS and the Entity Component System 9</td>
+</tr>
+<tr>
+<td>The C# job system 9</td>
+</tr>
+<tr>
+<td>Scheduling and completing jobs 11</td>
+</tr>
+<tr>
+<td>Job safety checks and dependencies 11</td>
+</tr>
+<tr>
+<td>The Burst compiler 12</td>
+</tr>
+<tr>
+<td>Collections 14</td>
+</tr>
+<tr>
+<td>Mathematics 15</td>
+</tr>
+<tr>
+<td>Entities (ECS) 15</td>
+</tr>
+<tr>
+<td>Archetypes 16</td>
+</tr>
+<tr>
+<td>Chunks 17</td>
+</tr>
+<tr>
+<td>Queries 18</td>
+</tr>
+<tr>
+<td>Job system integration 19</td>
+</tr>
+<tr>
+<td>Subscenes and baking 20</td>
+</tr>
+<tr>
+<td>Streaming 22</td>
+</tr>
+<tr>
+<td>EntityComponentSystemSamples Github 22</td>
+</tr>
+<tr>
+<td>Entities Graphics 25</td>
+</tr>
+<tr>
+<td>Physics 26</td>
+</tr>
+<tr>
+<td>Netcode for Entities 26</td>
+</tr>
+<tr>
+<td>Authoritative server 26</td>
+</tr>
+<tr>
+<td>Client-side prediction 27</td>
+</tr>
+<tr>
+<td>Character Controller 28</td>
+</tr>
+<tr>
+<td>What&#39;s on the DOTS roadmap? 29</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Evaluating DOTS for your project 30</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Made with DOTS 31</td>
+</tr>
+<tr>
+<td>Made with DOTS: Bare Butt Boxing, by Tuatara Games. 32</td>
+</tr>
+<tr>
+<td>Made with DOTS: Histera, by StickyLock Games 33</td>
+</tr>
+<tr>
+<td>Made with DOTS: V Rising, by Stunlock Studios 34</td>
+</tr>
+<tr>
+<td>Made with DOTS: Zenith: The Last City, by Ramen VR . 35</td>
+</tr>
+<tr>
+<td>Made with DOTS: Megacity Metro sample 36</td>
+</tr>
+<tr>
+<td></td>
+</tr>
+<tr>
+<td>Appendix: Concepts<br>related to ECS 37</td>
+</tr>
+<tr>
+<td>Memory allocation and garbage collection 37</td>
+</tr>
+<tr>
+<td>Multithreaded programming 39</td>
+</tr>
+<tr>
+<td>Memory and CPU cache 40</td>
+</tr>
+<tr>
+<td>Costs of object-oriented programming 42</td>
+</tr>
+</tbody>
+</table>
+<h1 id="-span-id-page-3-0-span-introduction"><span id="page-3-0"></span>Introduction</h1>
+<p>This guide explains the potential performance benefits of Unity&#39;s Data-Oriented Technology Stack (DOTS). It provides a high-level overview of each of the packages and features included in the stack, as well as explaining some of the core concepts related to, and impacted by, design-oriented design (DOD). It doesn&#39;t go into the details of the API&#39;s, but you will find links throughout to many new DOTS tutorials and other learning resources where you can learn more.</p>
+<p>Our goal with the e-book is to provide you with the knowledge you need to make an informed decision about whether your Unity project will benefit from using some or all of the DOTS features.</p>
+<h4 id="-author-and-expert-contributors-"><strong>Author and expert contributors</strong></h4>
+<p>This e-book was created from a collaboration between Unity DOTS engineers and external experts. The main author is Brian Will, a senior software engineer at Unity. Other experts who contributed to this guide are:</p>
+<ul>
+<li>Nik Lever, real-time 3D and Unity educator</li>
+<li>Steve McGreal, software engineer</li>
+<li>Daniel Kierkegaard Andersen, software engineer, Unity</li>
+<li>Laurent Gibert, director, product management, Unity</li>
+</ul>
+<h1 id="-span-id-page-4-0-span-about-performance"><span id="page-4-0"></span>About performance</h1>
+<p>If you&#39;re an experienced game developer then you know that performance optimization on target platforms is a task <a href="https://unity.com/resources/ultimate-guide-to-profiling-unity-games?isGated=false">that runs through</a> the entire development cycle. Maybe your game performs nicely on a high-end PC, but what about the low-end mobile platforms you&#39;re also aiming for? Do the frames take much longer than others, creating noticeable hitches? Are loading times annoyingly long, and does the game freeze for full seconds every time the player walks through a door? In such a scenario, not only is the current experience subpar, but you&#39;re effectively blocked from adding more features: more environment detail and scale, mechanics, characters and behaviors, physics, and platforms.</p>
+<p>What&#39;s the culprit? In many projects it&#39;s rendering: textures are too large, meshes too complex, shaders too expensive, or there&#39;s ineffective use of batching, culling, and LOD.</p>
+<p>Another common pitfall is excessive use of complex mesh colliders, which greatly increase the cost of the physics simulation. Or, the game simulation itself is slow. The C# code you wrote that defines what makes your game unique – that might be taking too many milliseconds of CPU time per frame.</p>
+<p>So how do you write game code that is fast, or at least not slow?</p>
+<p>In previous decades, PC game developers could often solve this problem by just waiting. From the 1970&#39;s and into the 21st century, CPU single-threaded performance generally doubled every few years (a phenomenon known as <a href="https://en.wikipedia.org/wiki/Moore%27s_law">Moore&#39;s law)</a>, so a PC game would &quot;magically&quot; get faster over its life cycle. In the last two decades, however, CPU single-threaded performance gains have been relatively modest. Instead, the number of cores in the CPU have been growing and even small handheld devices like smartphones today feature several cores. Moreover, the gap between high-end and low-end gaming devices has widened, with a large chunk of the player base using hardware that is several years old. Waiting for faster hardware no longer seems like a workable strategy.</p>
+<p><img src="_page_5_Picture_0.jpeg" alt=""></p>
+<p>The question to ask, then, is &quot;Why is my CPU code slow in the first place?&quot; There are several common pitfalls:</p>
+<ul>
+<li><strong>Garbage collection induces noticeable overhead and pauses:</strong> This occurs because the <a href="https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/fundamentals">garbage collector</a> serves as an automatic memory manager that manages the allocation and release of memory for an application. Not only does garbage collection incur CPU and memory overhead, it sometimes pauses all execution of your code for many milliseconds. Users might experience these pauses as small hitches or more intrusive stutters.</li>
+<li><strong>The compiler-generated machine code is suboptimal:</strong> Some compilers generate much less optimized code than others, with results varying across platforms.</li>
+<li><strong>The CPU cores are insufficiently utilized:</strong> Although today&#39;s lowest-end devices have multi-core CPUs, many games simply keep most of their logic on the main thread because writing multithreaded code is often difficult and prone to error.</li>
+<li><strong>The data is not cache friendly:</strong> Accessing data from cache is much faster than fetching it from main memory. However, accessing system memory may require the CPU to sit and wait for hundreds of CPU cycles; instead, you want the CPU to read and write data from its cache as much as possible.</li>
+</ul>
+<p>The simplest way to arrange this is to read and write memory sequentially, and so the most cache-friendly way to store data is in tightly-packed, contiguous arrays. Conversely, if your data is strewn non-contiguously throughout memory, accessing it will typically trigger many expensive cache misses; the CPU requests data that is not present in the cache memory and instead needs to fetch it from the slower main memory</p>
+<ul>
+<li><strong>The code is not cache friendly:</strong> When code is executed, it must be loaded from system memory if it&#39;s not already sitting in cache. One strategy is to favor calling a function in as few places as possible to reduce how often it must be loaded from system memory. For example, rather than call a particular function at various places strewn throughout your frame, it&#39;s better to call it in a single loop so that the code only needs to be loaded at most once per frame.</li>
+<li><strong>The code is excessively abstracted:</strong> Among other issues, abstraction tends to create complexity in both data and code, which exacerbates the aforementioned problems: managing allocations without garbage collection becomes harder; the compiler may not be able to optimize as effectively; safe and efficient multithreading becomes harder, and your data and code tend to become less cache-friendly. On top of all this, abstractions tend to spread around performance costs, such that the whole code is slower, leaving you with no clear bottlenecks to optimize.</li>
+</ul>
+<p><img src="_page_6_Picture_0.jpeg" alt=""></p>
+<p>All of the above ailments are commonly found in Unity projects. Let&#39;s look at these more specifically:</p>
+<ul>
+<li><em>—</em> Although C# allows you to create manually-allocated objects (meaning objects which are not garbage collected), the default norm in C# and most Unity projects is to use <strong>C# class instances</strong>, which are garbage collected. In practice, Unity users have long mitigated this issue with a technique called <a href="https://unity.com/how-to/use-object-pooling-boost-performance-c-scripts-unity">pooling</a> (even though pooling arguably defeats the purpose of using a garbage-collected language in the first place). The main benefit of object pooling is the efficient reuse of objects from a preallocated pool, eliminating the need for frequent creation and deallocation of objects.</li>
+<li>In the Unity Editor, C# code is normally compiled to machine code with the <strong>Mono Compiler.</strong> For standalone builds you can generally get better results using <a href="https://docs.unity3d.com/Manual/IL2CPP.html">IL2CPP</a> (C# Intermediate Language cross-compiled to C++), but this brings some downsides, like longer build times and making <a href="https://en.wikipedia.org/wiki/Video_game_modding">mod support</a> more difficult.</li>
+<li><em>—</em> It&#39;s common that Unity projects <strong>run all their code on the main thread</strong>, partly because doing so is what Unity makes easy:<ul>
+<li><em>—</em> The Unity event functions, such as the Update() method of MonoBehaviours, are all run on the main thread.</li>
+<li><em>—</em> Most Unity APIs can only be safely called from the main thread.</li>
+</ul>
+</li>
+<li><em>—</em> The data in a typical Unity project tends to be structured as <strong>a bunch of random objects scattered throughout memory</strong>, leading to very poor cache utilization. Again, this is partly because it&#39;s what Unity makes easy:<ul>
+<li><em>—</em> A GameObject and its components are all separately allocated, so they often end up in different parts of memory.</li>
+</ul>
+</li>
+<li><em>—</em> The <strong>code in a typical Unity project tends to not be cache friendly</strong>:<ul>
+<li><em>—</em> Conventional C# and Unity&#39;s APIs encourage an object-oriented style of code, which tends towards numerous small methods and complex call chains. Unlike a data-oriented approach it&#39;s not very hardware friendly.</li>
+<li><em>—</em> The event functions of every MonoBehaviour are invoked individually, and the calls are not necessarily grouped by MonoBehaviour type. For example, if you have 1000 <strong>Monster</strong> MonoBehaviours, each Monster is updated separately and not necessarily along with the other Monsters.</li>
+</ul>
+</li>
+<li><em>—</em> The object-oriented style of conventional C# and many Unity APIs generally lead to <strong>abstraction-heavy solutions</strong>. The resulting code then tends to have inefficiencies laced throughout that are hard to disentangle and isolate.</li>
+</ul>
+<p><img src="_page_7_Picture_0.jpeg" alt=""></p>
+<p>For more background information on these issues, see the appendix at the end of this guide that covers the following concepts:</p>
+<ul>
+<li><em>—</em> <a href="#page-36-0">Memory allocation and garbage collection</a></li>
+<li><em>—</em> <a href="#page-38-0">Multithreaded programming</a></li>
+<li><em>—</em> <a href="#page-39-0">Memory and CPU cache</a></li>
+<li><em>—</em> <a href="#page-41-0">Object-oriented programming and abstraction</a></li>
+<li><em>—</em> <a href="#page-44-0">Data-oriented design</a></li>
+</ul>
+<h1 id="-span-id-page-8-0-span-dots-and-the-entity-component-system"><span id="page-8-0"></span>DOTS and the Entity Component System</h1>
+<p>Unity&#39;s <a href="https://docs.unity3d.com/Packages/com.unity.entities@1.1/manual/index.html">Entity Component System</a> (ECS) is the data-oriented architecture that underpins DOTS packages and technologies. ECS delivers a high level of control and determinism over data in memory and runtime process scheduling in Unity.</p>
+<p>ECS for Unity 2022 LTS comes with two compatible physics engines, a high-level Netcode package, and a rendering framework to render large amounts of ECS data to Unity&#39;s Scriptable Render Pipelines (SRP), including the Universal Render Pipeline (URP) and the High Definition Render Pipeline (HDRP). It&#39;s compatible with GameObject data, allowing you to leverage systems that as of Unity 2022 LTS, do not natively support ECS, such as animation, navigation, input, or terrain.</p>
+<p>This section focuses on the features of DOTS and how they facilitate writing code that avoids the CPU performance pitfalls outlined in the prior section.</p>
+<p>The best starting place for learning about the specific DOTS packages is the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master">EntityComponentSystemSamples</a> Github, which includes explanatory reading and videos, along with many samples.</p>
+<p>However, before you dive into the samples, let&#39;s look at the features and packages that make stack.</p>
+<h1 id="the-c-job-system">The C# job system</h1>
+<p>The <a href="https://docs.unity3d.com/Manual/JobSystemOverview.html">C# job system</a> provides an easy and efficient way to write multithreaded code that helps your application take advantage of all available CPU cores.</p>
+<p>Unlike the other features of DOTS, the job system is not a package but rather is included in the Unity core module.</p>
+<p><img src="_page_9_Picture_0.jpeg" alt=""></p>
+<table>
+<thead>
+<tr>
+<th>CPU Usage<br>· VSync<br>Others<br>Rendering<br>Scripts<br>Physics</th>
+<th>66ms (15FPS)<br>33ms (30FPS)</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Animation<br>GarbageCollector<br>Global Illumination<br>UI</td>
+<td>16ms (60FPS)</td>
+<td>0.64ms<br>0.02ms</td>
+<td>0.00ms<br>21.31ms<br>0.00ms  0.00ms</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Timeline</td>
+<td>Live</td>
+<td></td>
+<td>0.01ms   0.00ms<br>CPU:24.43ms GPU :-- ms</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Oms</td>
+<td>5ms</td>
+<td>10ms</td>
+<td>15ms</td>
+<td>20ms</td>
+<td></td>
+</tr>
+<tr>
+<td>Main Thread</td>
+<td></td>
+<td></td>
+<td>PlayerLoop (20.97ms)</td>
+<td></td>
+<td></td>
+<td>(0)rLoop (1.4</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td>SimulationSystemGroup (19.16ms)</td>
+<td></td>
+<td>ystemG</td>
+<td>DoRender</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td>UpdateFunction.Invoke() (19.16ms)<br>Default World Unity.Entities.SimulationSystemGroup (19.16ms)</td>
+<td></td>
+<td>on.invo<br>Presen</td>
+<td>IRenderTo<br>ameraSta</td>
+</tr>
+<tr>
+<td></td>
+<td>ixedStepSimu</td>
+<td></td>
+<td>Default World Unity. EndSimulation EntityCommandBufferSystem (17.06ms)</td>
+<td></td>
+<td>Q.Hv</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td>JobHandle.Complete (15.85ms)</td>
+<td></td>
+<td>plourings</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td>WaitForJobGroupID (15.85ms)</td>
+<td></td>
+<td>Buffer.Pl</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>tem:Viscosity (Bu ) prs:PopulateNeighbours   gSystem:SpringAdjustment (Burst) (5.2) :DensityCatem:Density</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td>&gt;<br>Gfx.WaitForGfxCommandsFromMainThread (19.46ms)</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Render Thread</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>ndsFro</td>
+<td>iderSingleCa<br>alRenderPipe<br>queObjects</td>
+</tr>
+<tr>
+<td>Job</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Worker 0</td>
+<td></td>
+<td>earLeafNodesJob (Buem:Viscosity (Bully:s:PopulateNeighbours (System:SpringAdeminent (Burst) (5.2):DensityCatem:Density     le (1.28m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.11m<br>fle (1.40ms</td>
+</tr>
+<tr>
+<td>Worker 1</td>
+<td></td>
+<td>learLeafNodesJob (Buen:Viscosity (Buyors:PopulateNeighbours () gSystem:SpringAtem:Density   [e.(1/25ml</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.16m<br>dle (1.60ms)</td>
+</tr>
+<tr>
+<td>Worker 2</td>
+<td></td>
+<td>NearLeaNodesJob (Burm:Viscosity (1) ors:PopulateNeighbours (gSystem:SpringAtiont(Burst) (5.2):DensityCatem:Density - le (1.28m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>die (1.66ms)<br>le (1.16m</td>
+</tr>
+<tr>
+<td>Worker 3</td>
+<td></td>
+<td>earLeafNodesJob (Blem:Viscosity (Burors:PopulateNeighbours (gSystem:SpringAdminnent (Burst) (1.2 (1.28m) (</td>
+<td></td>
+<td></td>
+<td></td>
+<td>Je (1.15m<br>Idle (1.61ms)</td>
+</tr>
+<tr>
+<td>Worker 4</td>
+<td></td>
+<td>JearLeafNodesJob (BuentViscosity (Bu prs:PopulateNeighbours) gSystem:SpringAjimIment (Burst) (5.3):DensityCtlem:Density     0 (1.28m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.12m<br>Ille (1.32ms</td>
+</tr>
+<tr>
+<td>Worker 5</td>
+<td></td>
+<td>learLeafNodesJob (Btem:Viscosty (Bully: cs:PopulateNeighbourg cSystem:SpringAdminent (Burst) (5.2):DensityCatem:Density     0 (1.27m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.16m<br>Idle (1.67ms)</td>
+</tr>
+<tr>
+<td>Worker 6</td>
+<td></td>
+<td>earLeafNodesJob (Buen:Viscosity (Buyors:PopulateNeighbours (gSystem:SpringAjtment (Burst) (5.2) :DensityCatem:Density       (1.27m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>Ille (1.32ms<br>le (1.16m</td>
+</tr>
+<tr>
+<td>Worker 7</td>
+<td></td>
+<td>earLeafNodesJob (Buent:Viscosly (Bulors:PopulateNeighbours   gSystem:SpringAlem:Density   1.2 :Density       (1.27m)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.13m<br>ldle (1.66ms)</td>
+</tr>
+<tr>
+<td>Worker 8</td>
+<td></td>
+<td>earLeafNodesJob  Buem:Viscosty (Bu   gSystem:SpringAdminnent (Burst) (5.2) :DensityCatem:Density       (1.27m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.16m<br>lidle (1.65ms)</td>
+</tr>
+<tr>
+<td>Worker 9</td>
+<td></td>
+<td>earLeafNodesJob (Btem:Viscosity (Bu prs:PopulateNeighbours gSystem:SpringAtem:DensityCatem:Density     le (1.28m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>Je (1.16m)<br>Idle (1.66ms)</td>
+</tr>
+<tr>
+<td>Worker 10</td>
+<td></td>
+<td>earLeafNodesJob (Buent:Viscosity (Bu - rs:PopulateNeighbours) gSystem:SpringAdminent (Burst) (5.2 ):DensityCatem:Density       e (1.28m)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.16m<br>Idle (1.66ms)</td>
+</tr>
+<tr>
+<td>Worker 11</td>
+<td></td>
+<td>learLeafNodesJob (Bulors:PopulateNeighbours () gSystem:SpringAdimiment (Burst) (5.1) (DensityCatem:Density     (1.28m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.18m<br>Idle (1.66ms)</td>
+</tr>
+<tr>
+<td>Worker 12</td>
+<td></td>
+<td>ear Leat Nodes Job (Blem: Viscosity (Bu prs:PopulateNeighbours) (S.2): DensityCatem: Density Catem: Density Clem: Density Clem: Density Clem: Density Clem: Density Clem: Dens</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.16m<br>Idle (1.68ms)</td>
+</tr>
+<tr>
+<td>Worker 13</td>
+<td></td>
+<td>earLeafNodesJob  Blem:Viscosty (Bur bros)   System:SpringAment (Burst) (5.2   :DensityCttem:Density   [ 0 (1.27m</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.16m<br>      lle (1.31ms</td>
+</tr>
+<tr>
+<td>Worker 14</td>
+<td></td>
+<td>lear Leaf Nodes Job (Buen Viscostly (Burn) SpringAde thent (Burs) (5.2) (Density Catem Density   1/0 (1.27m)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>le (1.13m<br>Idle (1.68ms)</td>
+</tr>
+</tbody>
+</table>
+<p>A profile showing Burst-compiled jobs utilizing the potential of the CPU and running across many worker threads.</p>
+<p>Because MonoBehaviour updates are executed only on the main thread, many Unity games end up running all of their game logic on just one CPU core. To take advantage of additional cores, you could manually spawn and manage additional threads, but doing so safely and efficiently can be very difficult.</p>
+<p>For an easier alternative, Unity provides the C# job system:</p>
+<ul>
+<li>The job system maintains a pool of worker threads, one for each additional core of the target platform. For example, when Unity runs on eight cores, it creates one main thread and seven worker threads.</li>
+<li>The worker threads execute units of work called jobs. When a worker thread is idle, it pulls the next available job from the job queue to execute.</li>
+<li>Once a job starts execution on a worker thread, it runs to completion (in other words, jobs are not preempted).</li>
+</ul>
+<p><span id="page-10-0"></span><img src="_page_10_Picture_0.jpeg" alt=""></p>
+<p><img src="_page_10_Figure_2.jpeg" alt=""></p>
+<h3 id="-scheduling-and-completing-jobs-"><strong>Scheduling and completing jobs</strong></h3>
+<ul>
+<li>Jobs can only be scheduled (meaning, added to the job queue) from the main thread, not from other jobs.</li>
+<li>When the main thread calls the Complete() method on a scheduled job, it waits for the job to finish execution (if it hasn&#39;t finished already).</li>
+<li>Only the main thread can call Complete().</li>
+<li>After Complete() returns, you can be sure that the data used by the job is once again safe to access on the main thread and safe to be passed into subsequently scheduled jobs.</li>
+</ul>
+<h4 id="-job-safety-checks-and-dependencies-"><strong>Job safety checks and dependencies</strong></h4>
+<p>In multithreaded programming, ensuring safety and managing dependencies between threads are critical for avoiding race conditions, data corruption, and other concurrency issues. It&#39;s beyond the scope of this guide to explain these pitfalls. The key takeaway is to understand how the job system handles safety checks and dependencies:</p>
+<p>— For guaranteed isolation, each job has its own private data that the main thread and other jobs can&#39;t access.</p>
+<p><span id="page-11-0"></span><img src="_page_11_Picture_0.jpeg" alt=""></p>
+<ul>
+<li>However, jobs may also need to share data with each other or the main thread. Jobs that share the same data should not execute concurrently because this creates race conditions. So the job system &quot;safety checks&quot; throw errors when you schedule jobs that might conflict with others.</li>
+<li>When scheduling a job, you can declare that it depends upon prior scheduled jobs. The worker threads will not start executing a job until all of its dependencies have finished execution, allowing you to safely schedule jobs that would otherwise conflict.<ul>
+<li>For example, if jobs A and B both access the same array, you could make job B depend upon job A. This ensures job B will not execute until job A has finished, thus avoiding any possible conflict.</li>
+</ul>
+</li>
+<li>Completing a job also completes all of the jobs it depends upon, directly and indirectly.</li>
+</ul>
+<p>Many Unity features internally use the job system, so you will see more than just your own scheduled jobs running on the worker threads in the Profiler.</p>
+<p>Note that jobs are intended only for processing data in memory, not performing I/O (input and output) operations, such as reading and writing files or sending and receiving data over a network connection. Because some I/O operations may block the calling thread, performing them in a job would defeat the goal of trying to maximize utilization of the CPU cores. If you want to do multithreaded I/O work, you should call asynchronous APIs from the main thread or use conventional C# multithreading.</p>
+<p>To learn about jobs, start with the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master/EntitiesSamples/Assets/Tutorials/Jobs">jobs tutorial</a> in the samples repo (there is also a <a href="https://learn.unity.com/tutorial/65b3de6bedbc2a59a499d5b9?uv=2022.3&amp;projectId=65b3d3cfedbc2a5399ce3740#">version on</a>  <a href="https://learn.unity.com/tutorial/65b3de6bedbc2a59a499d5b9?uv=2022.3&amp;projectId=65b3d3cfedbc2a5399ce3740#">Unity Learn)</a>.</p>
+<h2 id="the-burst-compiler">The Burst compiler</h2>
+<p>As stated earlier, C# code in Unity is by default compiled with <a href="https://docs.unity3d.com/Manual/Mono.html">Mono,</a> a <a href="https://en.wikipedia.org/wiki/Just-in-time_compilation">JIT (just-in-time)</a> compiler or, alternatively with <a href="https://docs.unity3d.com/Manual/IL2CPP.html">IL2CPP,</a> an <a href="https://en.wikipedia.org/wiki/Ahead-of-time_compilation">AOT</a> (ahead of time) compiler which generally gives better runtime performance and may be better supported on some target platforms.</p>
+<p>The <a href="https://docs.unity3d.com/Packages/com.unity.burst@latest">Burst package</a> provides a third compiler that performs substantial optimizations, often yielding dramatically better performance than Mono or even IL2CPP. Using Burst can greatly improve the performance and scalability of a heavy computation problem, as the following images illustrate:</p>
+<p><img src="_page_12_Picture_0.jpeg" alt=""></p>
+<table>
+<thead>
+<tr>
+<th>PlayerLoop (346.97ms)</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Update. ScriptRunBehaviourUpdate (346.44ms)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>BehaviourUpdate (346.44ms)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>FindNearest.Update() [Invoke] (0.33ms)<br>FindNearest.Update() [Invoke] (0.33ms)<br>FindNearest.Update() [Invoke] (0.33ms)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>FindNearest.Update() [Invoke]<br>0.334ms</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Gfx.WaitForGfxC</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Semap  Current frame accumulated time:<br>342.92ms for 1000 instances on thread &#39;Main Thread&#39;</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Copy Show ▼</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Idle (346.24ms)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Edito<br>PlayerLoop (4.91ms)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Update. ScriptRunBehaviourUpdate (4.46ms)</td>
+<td>date Al</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>BehaviourUpdate (4.46ms)</td>
+<td>undın</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>FindNearest.Update() [Invoke] (2.00ms)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>JobHandle.Complete (1.41ms)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>WaitForJobGroupID (1.41ms)</td>
+<td>Seeker.Update() [Invoke]</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>0.001ms</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>FindNearestJob (Burst) (1.41ms)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Current frame accumulated time:</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>0.767ms for 1000 instances on thread &#39;Main Thread&#39;</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>Show ▼<br>Copy</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Gfx.WaitForGfxCommandsFromMainThread (4.52ms)</td>
+<td>11451 1 V</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Semaphore. WaitForSignal (4.52ms)<br>aitForS</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>D</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Top image: From the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master/EntitiesSamples/Assets/Tutorials/Jobs">jobs tutorial,</a> the FindNearest updates, compiled with Mono, take 342.9 ms. Bottom image: From the same jobs tutorial, the FindNearestJob, compiled with Burst, takes 1.4 ms.</p>
+<p>Understand, however, that Burst can only compile a subset of C#, so a lot of typical C# code can&#39;t be compiled with it. The main limitation is that Burst-compiled code can&#39;t access managed objects, including all class instances. As this excludes most conventional C# code, Burst compilation is only applied selectively to designated parts of code, such as jobs:</p>
+<pre><code><span class="hljs-comment">// The BurstCompile attribute marks this job to be Burst-compiled.</span>
+[BurstCompile]
+<span class="hljs-keyword">struct</span> MyJob : IJob
+{
+ <span class="hljs-keyword">public</span> NativeArray&lt;<span class="hljs-keyword">float</span>&gt; Input;
+ <span class="hljs-keyword">public</span> NativeArray&lt;<span class="hljs-keyword">float</span>&gt; Output;
+ <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Execute</span><span class="hljs-params">()</span>
+ </span>{
+ <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; Input.Length; i++)
+ {
+ Output[i] *= Input[i];
+ }
+ }
+}
+</code></pre><p><span id="page-13-0"></span>As described in <a href="https://youtu.be/WnJV6J-taIM?t=432">this video</a>, the performance gains of Burst come from the use of <a href="https://en.wikipedia.org/wiki/Single_instruction,_multiple_data">SIMD</a> (a technique used to perform the same operation on multiple data elements simultaneously) and better awareness of <a href="https://en.wikipedia.org/wiki/Aliasing_(computing">aliasing</a>) (when two or more pointers or references refer to the same memory location), among other techniques.</p>
+<p><img src="_page_13_Figure_2.jpeg" alt=""></p>
+<p>For expert users, Burst provides a few advanced features, such as <a href="https://docs.unity3d.com/Packages/com.unity.burst@1.8/manual/csharp-burst-intrinsics.html">intrinsics</a> and the <a href="https://docs.unity3d.com/Packages/com.unity.burst@1.8/manual/editor-burst-inspector.html">Burst Inspector</a> (pictured above), which shows the generated assembly code.</p>
+<h2 id="collections">Collections</h2>
+<p>The <a href="https://docs.unity3d.com/Packages/com.unity.collections@2.4/manual/index.html">Collections</a> package provides unmanaged collection types, such as lists and hash maps which are optimized for usage in jobs and Burst-compiled code.</p>
+<p>By &quot;unmanaged&quot;, it&#39;s meant that these collections are not managed by the C# runtime or garbage collector; you are responsible for explicitly deallocating any unmanaged collection that you create by calling its Dispose() method once it&#39;s no longer needed.</p>
+<p>Because these collections are unmanaged, they don&#39;t create <a href="https://www.jetbrains.com/help/dotmemory/Analysis_Overview_Page.html#high-gc-pressure">garbage collection pressure</a>, and can be safely used in jobs and Burst-compiled code.</p>
+<p>The collection types fall into a few categories:</p>
+<ul>
+<li>The types whose names start with <strong>Native</strong> will perform safety checks. These safety checks will throw an error:<ul>
+<li>If the collection is not properly disposed of.</li>
+<li>If the collection is used with jobs in a way that isn&#39;t thread-safe.</li>
+</ul>
+</li>
+</ul>
+<p><span id="page-14-0"></span><img src="_page_14_Picture_0.jpeg" alt=""></p>
+<ul>
+<li>The types whose names start with <strong>Unsafe</strong> perform no safety checks.</li>
+<li>The remaining types which are neither <strong>Native</strong> or <strong>Unsafe</strong> are small struct types with no pointers, so they are not allocated at all. Consequently, they need no disposal and have no potential thread-safety issues.</li>
+</ul>
+<p>Several <strong>Native</strong> types have <strong>Unsafe</strong> equivalents. For example, there is both <strong>NativeList</strong> and <strong>UnsafeList</strong>, and both <strong>NativeHashMap</strong> and <strong>UnsafeHashMap</strong>, among other pairs. For the sake of safety, you should prefer using the <strong>Native</strong> collections over the <strong>Unsafe</strong> equivalents when you can.</p>
+<h2 id="mathematics">Mathematics</h2>
+<p>The <a href="https://docs.unity3d.com/Packages/com.unity.mathematics@1.3/manual/index.html">Mathematics package</a> is a C# math library that, similar to Collections, is created for Burst and the job system to be able to compile C#/IL code into highly efficient native code. It provides you with:</p>
+<ul>
+<li>Vector and matrix types, such as <strong>float3</strong>, <strong>quaternion</strong>, <strong>float3x3</strong>.</li>
+<li>Many math methods and operators that follow <a href="https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl">HLSL</a>-like shader conventions.</li>
+<li>Special Burst compiler optimization hooks for many methods and operators.</li>
+</ul>
+<p>See this <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/blob/master/EntitiesSamples/Docs/cheatsheet/mathematics.md">Unity.Mathematics cheat sheet</a> for more information.</p>
+<p>Note that most types and methods of the old <strong>UnityEngine.Mathf</strong> library are usable in Burstcompiled code, but the <strong>Unity.Mathematics</strong> equivalents will perform better in some cases.</p>
+<h1 id="entities-ecs-">Entities (ECS)</h1>
+<p>The <a href="https://docs.unity3d.com/Packages/com.unity.entities@1.2/manual/index.html">Entities package</a> provides an implementation of <a href="https://en.wikipedia.org/wiki/Entity_component_system">ECS</a>, an architectural pattern composed of <strong>entities</strong> and <strong>components</strong> for data and <strong>systems</strong> for code.</p>
+<p>In short, an entity is composed of components, where each component is usually a C# struct. Like with GameObjects, an entity&#39;s components can be added and removed over its lifetime.</p>
+<p>Unlike with GameObjects, an entity&#39;s components do not usually have their own methods. Instead, in ECS, each &quot;system&quot; has an update method that is invoked usually once per frame, and these updates will read and modify the components of some entities. For example, a game with monsters might have a MonsterMoveSystem whose update method modifies the Transform components of every monster entity.</p>
+<p><span id="page-15-0"></span><img src="_page_15_Picture_0.jpeg" alt=""></p>
+<h2 id="-archetypes-"><strong>Archetypes</strong></h2>
+<p>In Unity&#39;s ECS, all entities with the same set of component types are stored together in the same &quot;archetype&quot;. For example, say you have three component types: A, B, and C. Each unique combination of component types is a separate archetype, e.g.:</p>
+<ul>
+<li>All entities with component types A, B, and C, are stored together in one archetype.</li>
+<li>All entities with component types A and B are stored together in a second archetype.</li>
+<li>All entities with component types A and C are stored in a third archetype.</li>
+</ul>
+<p>Adding a component to an entity or removing a component from an entity moves the entity to a different archetype.</p>
+<p><img src="_page_15_Figure_8.jpeg" alt=""></p>
+<p>In Unity&#39;s ECS, all entities with the same set of component types are stored together in the same &quot;archetype&quot;.</p>
+<p><span id="page-16-0"></span><img src="_page_16_Picture_0.jpeg" alt=""></p>
+<h2 id="-chunks-"><strong>Chunks</strong></h2>
+<p>Within an archetype, the entities and their components are stored in blocks of memory called chunks. Each chunk stores up to 128 entities, and the components of each type are stored in their own array within the chunk. For example, in the archetype for entities having component types A and B, each chunk will store three arrays:</p>
+<ul>
+<li>One array for the entity ID&#39;s</li>
+<li>A second array for the A components</li>
+<li>And a third array for the B components</li>
+</ul>
+<p>The ID and components of the first entity in a chunk are stored at index 0 of these arrays, the second entity at index 1, the third entity at index 2, and so on.</p>
+<p><img src="_page_16_Figure_8.jpeg" alt=""></p>
+<p>How chunks work in Unity&#39;s ECS architecture</p>
+<p>A chunk&#39;s arrays are always kept tightly packed:</p>
+<ul>
+<li>When a new entity is added to the chunk, it&#39;s stored in the first free index of the arrays.</li>
+<li>When an entity is removed from the chunk, the last entity in the chunk is moved to fill in the gap (an entity is removed from a chunk when it&#39;s being destroyed or moved to another archetype.)</li>
+</ul>
+<p><span id="page-17-0"></span><img src="_page_17_Picture_0.jpeg" alt=""></p>
+<h2 id="-queries-"><strong>Queries</strong></h2>
+<p>A primary benefit of the archetype- and chunk-based data layout is that it allows for efficient querying and iteration of the entities.</p>
+<p>To loop through all entities having a certain set of component types, an entity query first finds all archetypes matching that criteria, and then it iterates through the entities in the archetypes&#39; chunks:</p>
+<ul>
+<li>Since the components in the chunks reside in tightly packed arrays, looping through the component values largely avoids cache misses.</li>
+<li>Since the set of archetypes tends to remain stable throughout most of a program, the set of archetypes matching a query can usually be cached to make the queries even faster.</li>
+</ul>
+<pre><code><span class="hljs-comment">// A simple example system.</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">partial</span> <span class="hljs-keyword">struct</span> MonsterMoveSystem : ISystem
+{
+ [BurstCompile]
+ <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">OnUpdate</span>(<span class="hljs-params"><span class="hljs-keyword">ref</span> SystemState state</span>)
+ </span>{
+ <span class="hljs-comment">// Query that loops through all entities with </span>
+ <span class="hljs-comment">// a LocalTransform, Velocity, and Monster component</span>
+ <span class="hljs-keyword">foreach</span> (<span class="hljs-keyword">var</span> (transform, velocity) <span class="hljs-keyword">in</span> 
+ SystemAPI.Query&lt;RefRW&lt;LocalTransform&gt;, RefRO&lt;Velocity&gt;&gt;()
+ .WithAll&lt;Monster&gt;())
+ {
+ <span class="hljs-comment">// Update the transform position from the </span>
+ <span class="hljs-comment">// velocity (factoring in delta time)</span>
+ transform.ValueRW.Position += 
+ velocity.ValueRO.Value * SystemAPI.Time.deltaTime;
+ }
+ }
+}
+</code></pre><p><span id="page-18-0"></span><img src="_page_18_Picture_0.jpeg" alt=""></p>
+<h3 id="-job-system-integration-"><strong>Job system integration</strong></h3>
+<p>As long as entity component types are unmanaged, they can be accessed in Burst-compiled jobs. Two special job types are provided for accessing entities: IJobChunk and IJobEntity.</p>
+<pre><code><span class="hljs-comment">// A simple example system that schedules an IJobEntity.</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">partial</span> <span class="hljs-keyword">struct</span> MonsterMoveSystem : ISystem
+{
+ [BurstCompile]
+ <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">OnUpdate</span>(<span class="hljs-params"><span class="hljs-keyword">ref</span> SystemState state</span>)
+ </span>{
+ <span class="hljs-comment">// Create and schedule the job.</span>
+ <span class="hljs-keyword">var</span> job = <span class="hljs-keyword">new</span> MonsterMoveJob {
+ DeltaTime = SystemAPI.Time.DeltaTime
+ };
+ job.ScheduleParallel();
+ }
+}
+<span class="hljs-comment">// A Burst-compiled job that processes every entity that has </span>
+<span class="hljs-comment">// a LocalTransform, Velocity, and Monster component.</span>
+[WithAll(<span class="hljs-keyword">typeof</span>(Monster))]
+[BurstCompile]
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">partial</span> <span class="hljs-keyword">struct</span> MonsterMoveJob : IJobEntity
+{
+ <span class="hljs-keyword">public</span> <span class="hljs-keyword">float</span> DeltaTime;
+ <span class="hljs-comment">// Because we wish to modify the LocalTransform, we use 'ref'.</span>
+ <span class="hljs-comment">// We only wish to read the Velocity, so we use 'in'.</span>
+ <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Execute</span>(<span class="hljs-params"><span class="hljs-keyword">ref</span> LocalTransform, <span class="hljs-keyword">in</span> Velocity</span>)
+ </span>{
+ transform.Position += velocity.Value * DeltaTime;
+ }
+}
+</code></pre><p>For ease of use, systems can automatically handle job dependencies and job completion across systems.</p>
+<p><span id="page-19-0"></span><img src="_page_19_Picture_0.jpeg" alt=""></p>
+<h3 id="-subscenes-and-baking-"><strong>Subscenes and baking</strong></h3>
+<p>Unity ECS uses subscenes instead of scenes to manage the content of your application. This is because Unity&#39;s core scene system is incompatible with ECS.</p>
+<p>While entities can&#39;t be directly included in Unity scenes, a feature called baking allows for loading entities from scenes and converts the GameObjects and MonoBehaviour components into entities and ECS components.</p>
+<p>You can think of subscenes as scenes that are nested inside others and are processed by baking, which re-runs every time you edit a subscene. For every GameObject in a subscene, baking creates an entity, the entities get serialized into a file, and it&#39;s these entities that are loaded at runtime when the subscene is loaded, not the GameObjects themselves.</p>
+<table>
+<thead>
+<tr>
+<th>O Inspector</th>
+<th></th>
+<th></th>
+<th>0a :</th>
+<th>O Inspector</th>
+<th>03</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P<br>BoxPile<br>V<br>Tag Untagged</td>
+<td>4</td>
+<td>Layer Default</td>
+<td>Static</td>
+<td>BoxPile<br>From<br>Components</td>
+<td>Index 707<br>Version 1<br>BoxPile<br>Relationships<br>Aspects</td>
+</tr>
+<tr>
+<td>4 2<br>Transform<br>Position<br>Rotation<br>Scale<br>ర్యా</td>
+<td>×<br>49<br>x<br>0<br>X</td>
+<td>Y 1.5<br>Y<br>0<br>Y 17</td>
+<td>3<br>2<br>Z<br>22<br>Z<br>O<br>Z<br>1</td>
+<td>*<br>Local Transform<br>Position<br>Scale<br>Rotation</td>
+<td>× 49<br>Y 1.5 Z 22<br>× 0<br>YO ZO</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>GameObject Data</td>
+<td></td>
+<td></td>
+<td>ECS Data</td>
+</tr>
+</tbody>
+</table>
+<p>Left: inspecting a GameObject and right: inspecting an entity that was baked from the GameObject</p>
+<p>Which components get added to the baked entities is determined by the &quot;bakers&quot; associated with the GameObject components. For example, bakers associated with the standard graphics components, like MeshRenderer, will add graphics-related components to the entity. For your own MonoBehaviour types, you can define bakers to control what additional components get added to the baked entities.</p>
+<p><img src="_page_20_Picture_0.jpeg" alt=""></p>
+<pre><code><span class="hljs-comment">// This entity component type represents an energy shield with hit points, </span>
+<span class="hljs-comment">// maximum hit points, recharge delay, and recharge rate.</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">struct</span> EnergyShield : IComponentData
+{
+ <span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> HitPoints;
+ <span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> MaxHitPoints;
+ <span class="hljs-keyword">public</span> <span class="hljs-keyword">float</span> RechargeDelay;
+ <span class="hljs-keyword">public</span> <span class="hljs-keyword">float</span> RechargeRate;
+}
+<span class="hljs-comment">// A simple example authoring component.</span>
+<span class="hljs-comment">// An authoring component is just an ordinary MonoBehaviour</span>
+<span class="hljs-comment">// that has a defined Baker class.</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> EnergyShieldAuthoring : MonoBehaviour
+{
+ <span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> MaxHitPoints;
+ <span class="hljs-keyword">public</span> <span class="hljs-keyword">float</span> RechargeDelay;
+ <span class="hljs-keyword">public</span> <span class="hljs-keyword">float</span> RechargeRate;
+ <span class="hljs-comment">// The baker for our EnergyShield authoring component.</span>
+ <span class="hljs-comment">// This baker is run once for every EnergyShieldAuthoring </span>
+ <span class="hljs-comment">// instance that's attached to any GameObject in a subscene.</span>
+ <span class="hljs-keyword">class</span> Baker : Baker&lt;EnergyShieldAuthoring&gt;
+ {
+ <span class="hljs-function"><span class="hljs-keyword">public</span> override <span class="hljs-keyword">void</span> <span class="hljs-title">Bake</span><span class="hljs-params">(EnergyShieldAuthoring authoring)</span>
+ </span>{
+ <span class="hljs-comment">// The TransformUsageFlags specify which </span>
+ <span class="hljs-comment">// transform components the entity should have. </span>
+ <span class="hljs-comment">// The None flag means that it doesn't need transforms.</span>
+ var entity = GetEntity(TransformUsageFlags.None);
+ <span class="hljs-comment">// This simple baker adds just one component to the </span>
+entity.
+ AddComponent(entity, <span class="hljs-keyword">new</span> EnergyShield
+ {
+ HitPoints = authoring.MaxHitPoints,
+ MaxHitPoints = authoring.MaxHitPoints,
+ RechargeDelay = authoring.RechargeDelay,
+ RechargeRate = authoring.RechargeRate,
+ });
+ }
+ }
+}
+</code></pre><p><span id="page-21-0"></span><img src="_page_21_Picture_0.jpeg" alt=""></p>
+<p>On the one hand, it&#39;s inconvenient in simple cases to not be able to add entities directly in scenes, but on the other hand, the baking process can be useful in more advanced cases. Baking effectively separates authoring data (the GameObjects that you edit in the Editor) from runtime data (the baked entities), so what you directly edit and what gets loaded at runtime don&#39;t have to match 1-to-1. For example, you could write code to procedurally generate data during baking, which would spare you from paying the cost at runtime.</p>
+<h4 id="-streaming-"><strong>Streaming</strong></h4>
+<p>Particularly for large detailed environments, it&#39;s important to be able to load and unload many elements efficiently and asynchronously as the player or camera moves around the environment. In a large open world, for example, many elements must be loaded in as they come into view, and many elements must be unloaded as they go out of view. This technique is also referred to as streaming.</p>
+<p><a href="https://docs.unity3d.com/Packages/com.unity.entities@1.2/manual/streaming-scenes.html">Entities are far more suited for streaming</a> than GameObjects because entities consume less memory and processing overhead, and they can be serialized and deserialized much more efficiently.</p>
+<h2 id="entitycomponentsystemsamples-github">EntityComponentSystemSamples Github</h2>
+<p>The <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master">EntityComponentSystemSamples</a> Github repository includes many samples that introduce both basic and advanced DOTS features. The readme file for each sample collection provides further details but here&#39;s a brief description of some selected samples.</p>
+<p>Some of the samples in the Github repo are reproduced in a new Unity Learn course on DOTS, <a href="https://learn.unity.com/tutorial/65bbbee8edbc2a1bb56409d4?uv=2022.3&amp;projectId=65b3d3cfedbc2a5399ce3740#">Get acquainted with DOTS.</a> See the links under each sample to the Unity Learn tutorial it&#39;s featured in (if applicable).</p>
+<p>The <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master/EntitiesSamples/Assets/HelloCube">HelloCube samples</a> are a beginner-friendly entry point for DOTS and demonstrate the most fundamental concepts of the Entities API, such as creating and destroying entities, adding and removing components, and systems that access the entities. Get a breakdown of the sample&#39;s content in the <a href="https://youtu.be/32TLgtA9yUM">HelloCube walkthrough video</a> or go through the step-by-step <a href="https://learn.unity.com/tutorial/65b3d4f2edbc2a5860dd5d96?uv=2022.3&amp;projectId=65b3d3cfedbc2a5399ce3740">HelloCube tutorial</a> on Unity Learn.</p>
+<p>The <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master/EntitiesSamples/Assets/Baking">baking samples</a> demonstrate <a href="https://docs.unity3d.com/Packages/com.unity.entities@1.2/manual/baking.html">baking</a>, which serializes entity data at build time to be loaded from scenes at runtime.</p>
+<p><img src="_page_22_Picture_0.jpeg" alt=""></p>
+<p><img src="_page_22_Picture_2.jpeg" alt=""></p>
+<p>A screenshot from the Kickball tutorial</p>
+<p>The <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master/EntitiesSamples/Assets/Tutorials/Kickball">Kickball sample</a> demonstrates more basics of Entities but with a bit more gameplay than HelloCube. Controls allow the player to move the orange capsules, spawn yellow balls, and kick the balls away from the capsules. The gray cylinders are obstacles that block the movement of the capsules and balls. You can also see the <a href="https://www.youtube.com/watch?v=P6_3L7RTcm0">Kickball walkthrough video</a>.</p>
+<p><img src="_page_23_Picture_1.jpeg" alt=""></p>
+<p>A screenshot from the Tanks tutorial</p>
+<p>In the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master/EntitiesSamples/Assets/Tutorials/Tanks">Tanks sample</a>, tanks move on a plane, spin their turrets, and shoot colored projectiles bringing the job system and entities together in one sample. Your objective is to spawn moving tanks that shoot cannonballs from a spinning turret. Tanks are destroyed when hit by a cannonball and the player controls the movement of one tank. Check out the <a href="https://www.youtube.com/watch?v=jAVVxoWU5lo">Tanks</a>  <a href="https://www.youtube.com/watch?v=jAVVxoWU5lo">walkthrough video</a> or follow along in the <a href="https://learn.unity.com/tutorial/65b3e48fedbc2a611fc291a7?uv=2022.3&amp;projectId=65b3d3cfedbc2a5399ce3740">Tanks tutorial</a> on Unity Learn.</p>
+<p>In the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master/EntitiesSamples/Assets/Tutorials/Firefighters">Firefighters sample,</a> a fire spreads across a field, and bots form bucket brigade lines to douse the fire. It&#39;s a more advanced tutorial that brings many concepts together so we recommend doing the above tutorials first. The project was covered in four sessions as part of the <a href="https://unity.com/resources/dots-boot-camp-day-1">DOTS bootcamp</a>.</p>
+<p><img src="_page_23_Picture_5.jpeg" alt=""></p>
+<p>A scene from the Firefighters sample</p>
+<p><span id="page-24-0"></span><img src="_page_24_Picture_0.jpeg" alt=""></p>
+<h1 id="entities-graphics">Entities Graphics</h1>
+<p>The <a href="https://docs.unity3d.com/Packages/com.unity.entities.graphics@latest">Entities Graphics package</a> provides components and systems for rendering entities via the Universal Render Pipeline (URP) or the High Definition Render Pipeline (HDRP). Entities Graphics is built around the <a href="https://blog.unity.com/engine-platform/batchrenderergroup-sample-high-frame-rate-on-budget-devices">BatchRendererGroup</a> API.</p>
+<p>The <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master/GraphicsSamples/URPSamples">Entities Graphics samples</a> demonstrate various graphics features, such as light probes and lightmaps, material property overrides, and LODs.</p>
+<p><img src="_page_24_Picture_5.jpeg" alt=""></p>
+<p>An Entites.Graphics sample scene in the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples">EntityComponentSystemSamples repo</a>sitory</p>
+<p><span id="page-25-0"></span><img src="_page_25_Picture_0.jpeg" alt=""></p>
+<h1 id="physics">Physics</h1>
+<p>The <a href="https://docs.unity3d.com/Packages/com.unity.physics@1.2/manual/index.html">Unity Physics package</a> provides rigid body simulation and collision checks.</p>
+<p>Unity Physics supports swapping in alternate &quot;backends&quot; while maintaining the same surface level API, allowing you to swap physics implementations without changing your own code or assets.</p>
+<p>The default backend provided in the package is deterministic, meaning that given the same initial conditions and inputs, it will produce the same results.</p>
+<p>The <a href="https://docs.unity3d.com/Packages/com.havok.physics@1.2/manual/index.html">Havok Physics</a> package provides an alternative backend based on the proprietary Havok Physics engine that powers many industry-leading AAA games.</p>
+<p>The <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/blob/master/PhysicsSamples/README.md">Physics samples</a> illustrate many features of the package, including colliders, mass and motion properties, material properties, events, joints and motors, and more.</p>
+<p><img src="_page_25_Picture_8.jpeg" alt=""></p>
+<p>A Physics sample scene in the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples">EntityComponentSystemSamples repo</a>sitory</p>
+<h2 id="netcode-for-entities">Netcode for Entities</h2>
+<p>The <a href="https://docs.unity3d.com/Packages/com.unity.netcode@1.2/manual/index.html">Netcode for Entities</a> package is one of two netcode solutions provided by Unity. Unlike the other solution, <a href="https://docs-multiplayer.unity3d.com/netcode/current/about/">Netcode for GameObjects,</a> Netcode for Entities uses an authoritative server and supports client-side prediction, making it better suited for fast-paced competitive games.</p>
+<h3 id="-authoritative-server-"><strong>Authoritative server</strong></h3>
+<p>Rather than splitting authority of what is happening in the game across the player machines, an authoritative server runs the full game simulation itself and dictates what is happening in the game. The clients send player input to the server, the server updates the game simulation, and the server sends new snapshots of the game state back to the clients. This is the simplest way to implement networked game logic and the one least prone to exploitation by cheaters.</p>
+<p><span id="page-26-0"></span><img src="_page_26_Picture_0.jpeg" alt=""></p>
+<h2 id="-client-side-prediction-"><strong>Client-side prediction</strong></h2>
+<p>Since it takes time for data sent from the server to reach the clients, the state which the client has received always lags behind the server. For many elements in a game, this lag might be acceptable, but for others, like the player&#39;s character, such lag can ruin the feel of the game and make it difficult to play.</p>
+<p>Client-side prediction can solve this problem. For designated elements like the player&#39;s character, the client will attempt to predict the state a fraction of a second into the future. As long as these predictions match the state on the server accurately and consistently enough, the game will feel much more like a zero-lag experience.</p>
+<p>On top of these two core features, Netcode for Entities can also scale better than Netcode for GameObjects and provides better means to optimize bandwidth.</p>
+<p>A good introduction to Netcode for Entities is the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/blob/master/NetcodeSamples/README.md">Netcode for Entities samples</a> repository. These samples demonstrate many basic and advanced features, including syncing, connection flows, integration with Unity Physics, and more. Start with the <a href="https://docs.unity3d.com/Packages/com.unity.netcode@1.2/manual/networked-cube.html">Networked Cube tutorial,</a> which covers:</p>
+<ul>
+<li>Establishing a connection with the server.</li>
+<li>Communicating with the server.</li>
+<li>Spawning synchronized entities on the server.</li>
+<li>Creating standalone builds of the server and client.</li>
+<li>Running the server and a client in Play mode within the Editor.</li>
+</ul>
+<p><img src="_page_26_Picture_12.jpeg" alt=""></p>
+<p>The Networked Cube tutorial running in the Editor and as a standalone build</p>
+<p><span id="page-27-0"></span><img src="_page_27_Picture_0.jpeg" alt=""></p>
+<h4 id="ecs-network-racing-sample">ECS Network Racing sample</h4>
+<p><img src="_page_27_Picture_3.jpeg" alt=""></p>
+<p>The ECS Network Racing Sample features car racing multiplayer mechanics</p>
+<p>The <a href="https://github.com/Unity-Technologies/ECS-Network-Racing-Sample">ECS Network Racing sample i</a>s a lobby-based multiplayer car racing sample featuring Unity Physics and <a href="https://unity.com/products/vivox-voice-chat">Vivox</a> voice chat.</p>
+<h1 id="character-controller">Character Controller</h1>
+<p>The <a href="https://docs.unity3d.com/Packages/com.unity.charactercontroller@latest">CharacterController package</a> provides an ECS-based implementation of first- and thirdperson character controllers that work with Unity Physics and Netcode for Entities. The controllers support various common character behaviors, like sprinting and double jumping. You can also try the <a href="https://github.com/Unity-Technologies/CharacterControllerSamples">CharacterController tutorial and samples</a> for more learning examples.</p>
+<p><img src="_page_27_Picture_8.jpeg" alt=""></p>
+<p>The character controller package is available in the Unity Asset Store.</p>
+<p><span id="page-28-0"></span><img src="_page_28_Picture_0.jpeg" alt=""></p>
+<h1 id="what-s-on-the-dots-roadmap-">What&#39;s on the DOTS roadmap?</h1>
+<p>The core DOTS packages are production-ready but a few of the complementary DOTS-based systems are still in development. At the time of writing (spring 2024) here is the status of related systems.</p>
+<h4 id="-animation-"><strong>Animation</strong></h4>
+<p>Unity is developing a skinned mesh animation system to work with entities, but, as of the time of writing this guide, it&#39;s not yet available in current versions of Unity.</p>
+<p>In the meantime, the most common solution is to render animated characters as GameObjects whose transforms and animation states are synced from entities. In other words, the game simulation is fully implemented in entities, but presentation of the animated characters is done with GameObjects (for a simple demonstration of the idea, see the &quot;AnimateGameObject&quot; sample in the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/master">sample repo</a>sitory). This solution does require some extra coding and induces some overhead, but it should suffice for most games.</p>
+<p>Alternatively, some game makers and asset developers have implemented their own custom animation solutions. The community offers several different solutions of which some are available on the <a href="https://assetstore.unity.com/?q=ECS%20animation&amp;orderBy=1">Unity Asset Store</a>.</p>
+<h4 id="-user-interfaces-"><strong>User Interfaces</strong></h4>
+<p>There is currently no ECS-based UI system. Instead, ECS-based games can use the existing GameObject-based UI Toolkit (see the <a href="https://github.com/Unity-Technologies/EntityComponentSystemSamples/blob/master/EntitiesSamples/Assets/Tutorials/Firefighters/README.md">Firefighters tutorial</a> for a simple example of coordination between UI Toolkit and ECS). To learn more about using UI Toolkit in your games see the following advanced resources:</p>
+<ul>
+<li><a href="https://unity.com/resources/user-interface-design-and-implementation-in-unity?isGated=false">User interface design and implementation in Unity</a></li>
+<li><a href="https://assetstore.unity.com/packages/essentials/tutorial-projects/ui-toolkit-sample-dragon-crashers-231178">UI Toolkit Sample Dragon Crashers</a></li>
+<li><a href="https://assetstore.unity.com/packages/essentials/tutorial-projects/quizu-a-ui-toolkit-sample-268492">QuizU A UI Toolkit sample</a></li>
+<li><a href="https://discussions.unity.com/t/welcome-to-the-new-ui-toolkit-sample-project-quizu/308607">QuizU article series on Discussions</a></li>
+</ul>
+<p>Reference <a href="https://unity.com/roadmap/unity-platform/dots">the DOTS roadmap</a> to keep up to date on the latest plans for Unity ECS and DOTS.</p>
+<p><span id="page-29-0"></span><img src="_page_29_Picture_0.jpeg" alt=""></p>
+<h1 id="evaluating-dots-for-your-project">Evaluating DOTS for your project</h1>
+<p>If your code is causing CPU bottlenecks, you can consider reimplementing it as Burstcompiled jobs. Not only will Burst-compiled code often run multiple times faster than the Mono- or even IL2CPP-compiled equivalent, jobs allow you to split your workloads across all cores of the CPU.</p>
+<p>The good news is that Burst-compiled jobs can usually be integrated into the majority of existing projects with relative ease, even if a project otherwise makes no use of DOTS. Aside from possibly having to copy data into and out of unmanaged collections, rewriting existing code as Burst-compiled jobs generally requires no significant code restructuring.</p>
+<p>This is less true for the Entities package. While it&#39;s sometimes possible to selectively integrate entities for implementing specific features, ECS architecture tends to impose its own code structure on the whole project.</p>
+<p>Here are four good reasons for why you might want to build a new project using Entities:</p>
+<ul>
+<li>The project will have many static elements, such as for rendering a large, detailed environment. The <a href="https://www.youtube.com/watch?v=KgcU2HBOXAw">original Megacity project</a> demonstrates a complex environment made out of entities.</li>
+<li>The project will have many dynamic elements with computationally heavy behaviors. A real-time strategy game, for example, often needs to compute pathfinding for hundreds or thousands of units.</li>
+<li>You prefer the ECS way of structuring data and code, which is arguably easier to reason about and maintain than the more common object-oriented alternative. At the very least, ECS generally makes it easier to profile and identify bottlenecks.</li>
+<li>The project is a competitive multiplayer game with fast action, such as a shooter, and requires authoritative servers and client-side prediction for a good player experience (as stated above, these features are supported in Netcode for Entities but not Netcode for GameObjects).</li>
+</ul>
+<p>On the other hand, many games are bottlenecked primarily on the GPU, in which case Entities and the rest of the DOTS packages and related technologies might not help much because DOTS only improves CPU efficiency. Still, if DOTS can help you do the same amount of work in less CPU time, that leaves more headroom for additional features, and extra headroom can also help greatly if you later decide to target lower-powered devices.</p>
+<p>The following section highlights some of the games that use Unity ECS and DOTS technologies.</p>
+<h1 id="-span-id-page-30-0-span-made-with-dots"><span id="page-30-0"></span>Made with DOTS</h1>
+<p>Over the last several years, development teams have seen their multiplatform games benefit from using DOTS packages and technologies. As you&#39;ll learn from the following excerpts from customer stories, each team carefully thought through how their game could benefit from DOTS before deciding to implement it.</p>
+<p>You&#39;ll find more Unity customer stories and profiles in the <a href="https://unity.com/resources">Unity Resources hub.</a></p>
+<p><span id="page-31-0"></span><img src="_page_31_Picture_0.jpeg" alt=""></p>
+<h2 id="made-with-dots-bare-butt-boxing-by-tuatara-games">Made with DOTS: <em>Bare Butt Boxing</em>, by Tuatara Games</h2>
+<p><img src="_page_31_Picture_2.jpeg" alt=""></p>
+<p><em>Bare Butt Boxing</em> by Tuatara Games, <a href="https://unity.com/case-study/bare-butt-boxing">made with Unity</a>, available for PC and console</p>
+<p><a href="https://tuataragames.com/games/bare-butt-boxing">Tuatara Games</a> built Bare Butt Boxing using Unity&#39;s DOTS from the very start of development. &quot;Since this is our first game as a new team, we wanted to do early access with a foundation strong enough for us to pivot the design into the right direction,&quot; says software engineer Hendrik du Toit. &quot;DOTS allowed us to modularize our systems in a way that we can test gameplay ideas without weeks of rewriting code.&quot;</p>
+<p>Tuatara&#39;s data-oriented design approach simplifies iteration and allows them to be flexible with optimization. &quot;Having ECS means we can adjust runtime data layout easily without impacting serialized data,&quot; says game programmer Ewan Argouse.</p>
+<p>&quot;ECS has helped us to divide the game into multiple layers without trouble. The game design can be simple and related to the simulation directly, and we can create systems on top of that to present it nicely…thanks to that, the presentation can be complex while our simulation can be client-predicted without being too heavy on the CPU.&quot;</p>
+<ul>
+<li>Ewan Argouse, game programmer, Tuatara Games</li>
+</ul>
+<p><span id="page-32-0"></span><img src="_page_32_Picture_1.jpeg" alt=""></p>
+<h2 id="made-with-dots-histera-by-stickylock-games">Made with DOTS: <em>Histera</em>, by StickyLock Games</h2>
+<p><em>Histera</em> by StickyLock Games, <a href="https://www.youtube.com/watch?v=Plb5LlABHhk">made with Unity,</a> and available for PC via Steam Early Access</p>
+<p><a href="https://histera.com/">&quot;Histera</a> started out as an extraordinary idea, and that was to innovate the FPS genre as a whole. How we&#39;ve done that is…through the &#39;glitch&#39;...the glitch is our main USP. (It) basically takes a section of the map and changes that to a completely new era. So you can go from a prehistoric era up to a future era and it will completely change the layout as well.</p>
+<p>The reason we chose to go with DOTS was that at the time, we were looking at networking solutions, however there weren&#39;t a lot of options for us. Since we&#39;re going with a first-person shooter game, we knew that peer-to-peer wouldn&#39;t be the reliable option for us. We wanted a dedicated game server option. There was a Unity blog detailing the release of Unity Netcode and DOTS…they also released a few samples. And when we looked into those, we got quite intrigued because they showcased that we would be able to make an FPS with the tech.</p>
+<p>Once we dove deeper into those (DOTS) packages, we found that it was very interesting for us from a developer perspective…it was a completely new paradigm. Instead of being object-oriented, it was data-oriented…after a lot of talking and discussing, we wanted to push forward and invested in our knowledge on DOTS and ECS.&quot;</p>
+<ul>
+<li>Jamel Ziaty, producer, StickyLock Games</li>
+</ul>
+<p><span id="page-33-0"></span><img src="_page_33_Picture_0.jpeg" alt=""></p>
+<h1 id="made-with-dots-v-rising-by-stunlock-studios">Made with DOTS: <em>V Rising</em>, by Stunlock Studios</h1>
+<p><em>V Rising</em> by Stunlock Studios, <a href="https://www.youtube.com/watch?v=HgCLe16Gmos">made with Unity,</a> available for PC</p>
+<p>When <a href="https://www.stunlock.com/">Stunlock Studios</a> set out to build <em>V Rising</em>, they realized quickly that the scale of their vision would require a different design pattern from their previous titles. &quot;We wanted the world to feel alive with lots of destructibles and interactables,&quot; says cofounder and technical director Rasmus Höök.</p>
+<p>Höök started experimenting with DOTS &quot;because its use cases seemed to fit perfectly with the problems we were trying to solve.&quot; Using DOTS and ECS, Stunlock decreased server strain and minimized client CPU resources, resulting in more concurrent players, lowered system requirements, and a robust tech stack that can scale up to meet Stunlock Studios&#39;s creative vision.</p>
+<p>&quot;ECS offers a significant advantage with its clear separation between Editor data and runtime data. When working in the Editor, we create authoring prefabs, which are essentially standard GameObjects with MonoBehaviors. However, these prefabs are solely for editing purposes and are not directly used in the game itself. Instead, they go through a process called baking where they are converted into runtime components. Since the authoring prefabs are only used in the Editor it allows us to add functionality and data to them to improve the workflow without worrying about cluttering the actual game.</p>
+<p>Because of this, we can freely modify and optimize the runtime components without impacting the Editor data. This separation has greatly helped us maintain a complex project like <em>V Rising</em>.&quot;</p>
+<p>– Rasmus Höök, technical director, Stunlock Studios</p>
+<p><span id="page-34-0"></span><img src="_page_34_Picture_0.jpeg" alt=""></p>
+<p><img src="_page_34_Picture_1.jpeg" alt=""></p>
+<h1 id="made-with-dots-zenith-the-last-city-by-ramen-vr">Made with DOTS: <em>Zenith: The Last City</em>, by Ramen VR</h1>
+<p>As systems-based games, MMOs require strong, scalable technical foundations. Early in development, <a href="https://zenithmmo.com/">Ramen VR</a> organized Zenith&#39;s systems using MonoBehaviors, but running logic hundreds of times across hundreds of identical GameObjects was inefficient.</p>
+<p>They leveraged Unity&#39;s ECS framework to avoid the drawbacks of object-oriented programming. &quot;An MMO is a great application for ECS,&quot; [CTO Lauren] Frazier notes. &quot;Zenith requires thousands of Entities to coexist at the same time, and ECS allows us to run at scale.&quot;</p>
+<p>In the new workflow, every &quot;actor&quot; GameObject (players, mobs, collectibles) has a corresponding ECS Entity. The ECS runs through GameObjects and checks for relevant tags, triggering logic whenever they&#39;re found.</p>
+<p>&quot;It was nice to be able to pick the workflow appropriate to the situation. We could have done pure Objects or pure Entities – but I don&#39;t think you should have to choose,&quot; says Frazier.&quot;</p>
+<p>– Lauren Frazier, CTO, Ramen VR</p>
+<p>Made with DOTS: Megacity Metro sample</p>
+<p><span id="page-35-0"></span><img src="_page_35_Picture_2.jpeg" alt=""></p>
+<p>The Megacity Metro sample</p>
+<p>Unity&#39;s Megacity Metro sample is a multiplayer and mobile-focused spin on the original Megacity sample. Megacity Metro is built with URP, Entities, Netcode for Entities, and Unity Physics, and runs on a range of devices, from low-end mobile to high-end console platforms. It supports competitive cross play for over 100 players and showcases <a href="https://unity.com/solutions/gaming-services">Unity Gaming Services</a> like Authentication, Game Server Hosting, Matchmaker, and Vivox.</p>
+<p>You can learn more about Megacity Metro and download the project <a href="https://unity.com/resources/megacity-metro">here</a>.</p>
+<h1 id="-span-id-page-36-0-span-appendix-concepts-related-to-ecs"><span id="page-36-0"></span>Appendix: Concepts related to ECS</h1>
+<p>The data-oriented elements of DOTS make it more hardware friendly than the object-oriented programming approach you know from Monobehaviour projects. It can help to have a good understanding of some key concepts related to, and impacted by, DOD that are normally less relevant for your C# programming in Monobehaviour-based projects.</p>
+<h1 id="memory-allocation-and-garbage-collection">Memory allocation and garbage collection</h1>
+<p>In modern operating systems, programs run as separate processes, where the memory of each process is managed by the operating system. When a process wants more memory, it has to request it from the operating system, upon which the operating system will give the process a contiguous block of memory. This is called memory allocation.</p>
+<p>When a process is terminated, the operating system will reclaim the memory, freeing it up to be used elsewhere. For long-running programs, however, it often makes sense for the program to hand back blocks of memory which it is no longer using. This is called memory deallocation or freeing. In simple short-lived programs, it&#39;s often sufficient to only allocate memory without ever freeing it. However, if a long-running program continues to make new allocations but neglects to ever free them, the program might end up using an unreasonable amount of memory. These situations are called memory leaks, and can lead to worse performance and instability.</p>
+<p><img src="_page_37_Picture_0.jpeg" alt=""></p>
+<p>Programs often use their own internal allocators, which can work in the following way:</p>
+<ul>
+<li><ol>
+<li>The program allocates a large block of memory from the operating system.</li>
+</ol>
+</li>
+<li><ol>
+<li>The program&#39;s own internal allocator tracks which ranges within the block are currently in use.</li>
+</ol>
+</li>
+<li><ol>
+<li>When the program needs more memory, it requests it from the internal allocator rather than from the operating system.</li>
+</ol>
+</li>
+<li><ol>
+<li>When these internally allocated blocks of memory are no longer needed, the program should notify its allocator to free the memory.</li>
+</ol>
+</li>
+</ul>
+<p>Internal allocators have some advantages.</p>
+<ul>
+<li>Unlike allocating and deallocating from the operating system, allocating and deallocating from an internal allocator does not generally require expensive system calls.</li>
+<li>A program can use multiple custom allocators to better accommodate different use cases: Some allocators are more appropriate for small, short-lived allocations, while other allocators are more appropriate for large, long-lived allocations. For example, a so-called &quot;arena allocator&quot; frees all of its allocations at the same time, so its internal logic and bookkeeping can be very simple and cheap.</li>
+</ul>
+<p>In many of today&#39;s popular languages, including C#, the runtime uses a garbage collector that will scan memory to find unused allocations and free them. Compared to manual allocation, this automated way is more convenient and makes memory leaks and other memory-related issues easier to avoid. On the downside, garbage collection incurs overhead and requires interrupting the program execution, which may cause noticeable pauses that negatively affect the player experience.</p>
+<p>In DOTS, entities and the native collections are unmanaged, meaning they are not allocated or managed by the runtime or its garbage collector:</p>
+<ul>
+<li>For entities, the memory is allocated and freed for you by the EntityManager, so your entities only leak memory if you neglect to destroy them when they are no longer needed. In practice, such cases tend to be noticeable, so this mistake is easy to detect and correct.</li>
+<li>For the native collections, DOTS provides several allocators with different trade-offs. The <strong>Allocator.Temp</strong> allocator, for example, provides very cheap allocations that are disposed of automatically at the end of the frame or the job in which it was allocated. The <strong>Allocator.Persistent</strong> allocator, in contrast, provides more expensive allocations that live indefinitely until manually freed. Unlike allocations from Allocator.Temp, allocations from Allocator.Persistent can be large, and passed into jobs. Other allocators include <strong>Allocator.TempJob</strong> and the <strong>WorldUpdateAllocator</strong>.</li>
+</ul>
+<p>See the <a href="https://docs.unity3d.com/Manual/performance-garbage-collector.html">documentation</a> on Unity&#39;s garbage collector for more information.</p>
+<p><span id="page-38-0"></span><img src="_page_38_Picture_0.jpeg" alt=""></p>
+<h1 id="multithreaded-programming">Multithreaded programming</h1>
+<p>Most modern CPUs have more than one core, and putting these additional cores to work can greatly boost performance of a game that is CPU heavy. However, multithreading can be difficult and unsafe because it requires a lot of low-level manual programming that might be unfamiliar territory for many C# developers. In DOTS, the <a href="https://docs.unity3d.com/6000.0/Documentation/Manual/JobSystem.html">C# job system</a> helps you write safe multithreaded code in a way that is easy and that avoids common pitfalls, but this section should help you understand the underlying issues.</p>
+<p>When a process is spawned by the operating system, it starts off with a single thread of execution. Through system calls, a process can spawn additional threads which will belong to the same process and thus share the same memory.</p>
+<p>Each logical core of the CPU can run one thread at a time, and the operating system controls which threads run on which cores and when. At any time, the operating system can interrupt a running thread and suspend it so that another thread can use the core. When two threads access the same resource (namely data), the danger is that one thread mutates the resource when the other thread is not expecting it to. In general, a thread should only read and modify a shared resource within a &quot;critical section&quot; – a span of code within which the thread has exclusive access to the shared resource.</p>
+<p>To control access across threads, a shared resource is governed by some kind of <a href="https://en.wikipedia.org/wiki/Event_(synchronization_primitive">synchronization primitive,</a>) such as a mutex. However, these synchronization primitives generally require all threads that use them to follow a strict protocol, and failing to do so can make the primitives ineffective or hang the program.</p>
+<p>Another issue is that certain system calls may block the calling thread, meaning suspend its execution. For example, when a thread invokes a system call to read a file, the data probably isn&#39;t yet sitting in memory, so it must be copied off a device into memory first before the system call can return. Because the wait for the data may be very long (in CPU terms), the operating system may block the calling thread while the data is being loaded, and another thread can run on the CPU core in the meantime. Only once the data is ready will the operating system unblock the thread and allow it to resume execution.</p>
+<p>One use case, then, for multithreading is to do longer-running blocking operations on &quot;background threads&quot;, such as reading files and writing files, while continuing to do work on the &quot;main thread&quot;. An interactive program, for example, may want to load a file in the background while the main thread still responds to user input and redraws the screen.</p>
+<p>In other cases, you may simply want to split a program&#39;s CPU workload across multiple cores to get the work done faster. Data compression, for example, is very CPU intensive, so it can usually benefit from multithreading.</p>
+<p>A consideration to keep in mind is that the CPU cores must contend with each other for use of the storage devices, system memory, and other system resources. For example, if two threads try to concurrently access memory, they cannot do so at the same moment but instead must take turns. Fortunately, these overlaps are resolved at the hardware level, but the problem</p>
+<p><span id="page-39-0"></span><img src="_page_39_Picture_0.jpeg" alt=""></p>
+<p>remains that each thread&#39;s memory access slows down the overlapping memory access of all other threads. Particularly then, for a task which requires heavy amounts of memory access relative to CPU computation, splitting the work across multiple threads will tend to reap diminishing returns.</p>
+<p>For example, you might assume that a task split across 10 threads should run 10 times faster than the same task running on just one thread, but this theoretical limit is rarely achieved in practice, thanks to memory contention. Instead, 10 threads might more realistically get you perhaps a 5-7x boost (though, again, this depends upon the specific scenario). In fact, if the task requires a high ratio of memory access relative to computation work, the performance might improve by using <em>fewer</em> threads, because the fewer the number of threads the less memory contention.</p>
+<h2 id="memory-and-cpu-cache">Memory and CPU cache</h2>
+<p>Most of today&#39;s CPUs have one to three levels of cache, usually designated L1, L2, and L3.</p>
+<p>When the CPU executes an instruction that reads an address of system memory, the hardware first checks if a copy of the data at that address is sitting in the L1 cache. If not, the hardware then checks L2 cache (if it exists), and then L3 cache (if it exists). If no copy currently sits in any cache the hardware will actually read system memory itself. Upon reading the data, the hardware will copy it into a portion of the lower cache levels, e.g., data read from L3 will be copied into L1 and L2, and data read from system memory will be copied into all cache levels. This caching strategy makes sense because when an address is read, it&#39;s usually likely that the same address will be read again shortly thereafter. By copying the data into cache, the data can likely be read directly from cache the next time it is needed.</p>
+<p>Of course, not all of system memory can fit in cache: Each level of cache is smaller than the one above it, and the largest cache is still much smaller than all of system memory. Therefore, when a portion of memory is copied into cache, it must overwrite some other portion of memory that was previously cached.</p>
+<p>When data is read from cache, it&#39;s called a &quot;cache hit&quot;. When data must be read from system memory itself because a copy is not currently cached, it&#39;s called a cache miss.</p>
+<p>The precise performance characteristics of caches varies greatly among different chips but roughly, L1 will be at least a few times faster than L2, L2 will be at least an order of magnitude faster than L3, and L3 will be at least twice as fast as system memory. In total, the CPU will likely access data in L1 cache at least two orders of magnitude faster than it will access data in system memory. Because the speed gap between lower cache levels and system memory is so great, minimizing the number of cache misses triggered in your program is a key performance consideration.</p>
+<p><img src="_page_40_Picture_0.jpeg" alt=""></p>
+<p><img src="_page_40_Figure_1.jpeg" alt=""></p>
+<h4 id="levels-of-cache-source-https-tech4gamers-com-">Levels of cache; Source: <a href="https://tech4gamers.com">https://tech4gamers.com</a></h4>
+<p>Thanks to a hardware feature called prefetching, the simplest and most effective way to minimize cache misses is to access addresses of memory sequentially rather than jumping around randomly. Therefore, cache-efficient data structures store their elements tightlypacked and contiguous in memory. In other words, the data is stored in arrays.</p>
+<p>When you start reading memory addresses in sequence, the hardware notices this pattern and will start reading ahead and copying the memory into cache, in the expectation that you&#39;ll keep going. This may end up as a bit of wasted effort in cases where the extra data isn&#39;t needed, but in cases where you are reading through an array, this prefetching behavior will put data in cache right before the CPU needs it. So aside from a possible initial cache miss when you read the first bytes of an array, an array can be read without triggering cache misses. As the CPU train speeds along, <a href="https://www.youtube.com/watch?v=jrmZIgVoQw4&amp;t=91s">the tracks are laid right in front of the train,</a> just in time.</p>
+<p>Managed C# objects like GameObjects and MonoBehaviours are separately instantiated, and therefore might end up stored in different parts of memory. Consequently, traversing through many managed objects typically requires jumping around memory and thus triggering many cache misses.</p>
+<p>In DOTS, entities and their components are tightly packed in contiguous arrays by design, allowing them to be sequentially traversed with minimal cache misses.</p>
+<p>See this talk by Scott Meyers for further information about memory and cache: <a href="https://www.youtube.com/watch?v=WDIkqP4JbkE">CPU Caches</a>  <a href="https://www.youtube.com/watch?v=WDIkqP4JbkE">and Why You Care.</a></p>
+<p><span id="page-41-0"></span><img src="_page_41_Picture_0.jpeg" alt=""></p>
+<h1 id="costs-of-object-oriented-programming">Costs of object-oriented programming</h1>
+<p>A common challenge with object-oriented programming (OOP) is its many definitions. Some insist that OOP is all about inheritance, or polymorphism, or encapsulation, or the combination of the three, while others offer less conventional theories. Here is the definition according to Wikipedia:</p>
+<p>&quot;Object-oriented programming (OOP) is a programming paradigm based on the concept of objects, which can contain data and code: data in the form of fields (often known as attributes or properties), and code in the form of procedures (often known as methods). <strong>In OOP, computer programs are designed by making them out of objects that interact with one another.</strong>&quot; – <a href="https://en.wikipedia.org/wiki/Object-oriented_programming">Wikipedia</a></p>
+<p>In other words, an object-oriented program is composed of interacting &quot;objects&quot;, where each object is an encapsulated unit of data and code that has some degree of autonomy and independence from the others. Much like the programs on a network cooperate by sending each other messages, the objects in an object-oriented program cooperate by invoking each others&#39; methods, and in fact, it&#39;s the interactions of the objects that really defines objectoriented programming, not the individual objects themselves.</p>
+<p>The theoretical benefits of OOP include:</p>
+<ul>
+<li><strong>Composability</strong>: Programs made out of objects can be incrementally assembled and modified.</li>
+<li><strong>Reconfigurability</strong>: Features can be easily added, removed, and modified by inserting, removing, and replacing objects.</li>
+<li><strong>Code reuse</strong>: Objects can be easily reused between programs.</li>
+<li><strong>Intuitiveness</strong>: Real-world things and processes naturally correspond to objects.</li>
+<li><strong>Abstraction</strong>: Objects allow the programmer to solve problems at a high-level without being distracted by low-level details.</li>
+</ul>
+<p>Steve Jobs elaborated on this last point in an interview in the June 16, 1994 edition of <em><a href="https://www.rollingstone.com/culture/culture-news/steve-jobs-in-1994-the-rolling-stone-interview-231132/">Rolling Stone</a></em>:</p>
+<p>&quot;Objects are like people. They&#39;re living, breathing things that have knowledge inside them about how to do things and have memory inside them so they can remember things. And rather than interacting with them at a very low level, you interact with them at a very high level of abstraction, like we&#39;re doing right here.</p>
+<p>Here&#39;s an example: If I&#39;m your laundry object, you can give me your dirty clothes and send me a message that says, &quot;Can you get my clothes laundered, please.&quot; I happen to know where the best laundry place in San Francisco is. And I speak English, and I have dollars in my pockets. So I go out and hail a taxicab and tell the driver to take me to this place in San Francisco. I go get your clothes laundered, I jump back in the cab, I get back here. I give you your clean clothes and say, &quot;Here are your clean clothes.&quot;</p>
+<p>You have no idea how I did that. You have no knowledge of the laundry place. Maybe you speak French, and you can&#39;t even hail a taxi. You can&#39;t pay for one, you don&#39;t have dollars in your pocket. Yet I knew how to do all of that. And you didn&#39;t have to know any of it. All that complexity was hidden inside of me, and we were able to interact at a very high level of abstraction. That&#39;s what objects are. They encapsulate complexity, and the interfaces to that complexity are high level.&quot;</p>
+<h4 id="-performance-costs-of-oop-"><strong>Performance costs of OOP</strong></h4>
+<p>On the downside, OOP tends to incur a number of performance costs:</p>
+<ul>
+<li><strong>Scattered data layout:</strong> OOP code is often split into many small objects, and the data often ends up scattered throughout memory (which leads to cache inefficiencies, as discussed in prior sections).</li>
+<li><strong>Excessive abstraction:</strong> Object-oriented design often encourages layers of delegation, where the higher levels defer the real work to lower levels, resulting in many objects and methods that do little actual work.</li>
+<li><strong>Complex call chains:</strong> Thanks to the many layers of abstraction and a preference for small functions, call chains get very complex.</li>
+<li><strong>Virtual calls</strong>: Not only do virtual dispatch tables incur overhead over regular function calls, virtual calls cannot normally be inlined (though some JIT compilers may do so at runtime)</li>
+<li><strong>Bad allocation patterns:</strong> The complex code paths that OOP encourages often make it difficult to reason about object lifetimes, so OOP code tends to rely upon frequent, small allocations and garbage collection rather than more efficient alternatives.</li>
+<li><strong>One-at-a-time processing:</strong> Because the code which directly manipulates an object is part of the object itself, there&#39;s a natural tendency in OOP to process objects one-by-one rather than in large batches.</li>
+</ul>
+<h4 id="-structural-costs-of-oop-"><strong>Structural costs of OOP</strong></h4>
+<p>Even if we&#39;re happy to sacrifice optimal performance for the sake of making programs easier to write and maintain, OOP can also have shortcomings in those areas as well. Here are a few:</p>
+<h4 id="-1-entangling-your-data-and-code-makes-both-of-them-messier-and-more-complicated-"><strong>1. Entangling your data and code makes both of them messier and more complicated.</strong></h4>
+<p>It is often claimed that OOP prioritizes data over code:</p>
+<p>&quot;Object-oriented programming (OOP) is a computer programming model that organizes software design around data, or objects, rather than functions and logic. […] OOP focuses on the objects that developers want to manipulate rather than the logic required to manipulate them.&quot;</p>
+<p>– Alexander S. Gillis, <em><a href="https://www.techtarget.com/searchapparchitecture/definition/object-oriented-programming-OOP">What is Object-Oriented Programming</a></em>, published on TechTarget Network.</p>
+<p><img src="_page_43_Picture_0.jpeg" alt=""></p>
+<p>However in reality, OOP entangles data and code together: If an object&#39;s capabilities must directly follow from its data and vice versa, what an object can do is integral to its definition and can&#39;t be separated from the object&#39;s data.</p>
+<p>This entanglement often leads to questionable design choices, such as:</p>
+<ul>
+<li>Objects with code that really should just have data.</li>
+<li>Objects with data that really should just have code.</li>
+<li>Objects that group data together for the purposes of code.</li>
+<li>Objects that group code together for the purposes of data.</li>
+<li>Code that is split across objects for the sake of data.</li>
+<li>Data that is split across objects for the sake of code.</li>
+</ul>
+<h4 id="-2-replacing-concentrated-complexity-with-scattered-complexity-increases-the-overall-complexity-"><strong>2. Replacing concentrated complexity with scattered complexity increases the overall complexity.</strong></h4>
+<p>According to the rules of object-oriented design, an object with too many &quot;responsibilities&quot; should be broken up into smaller objects. However, when you break up large things into smaller pieces, you may end up just scattering the complexity around rather than reducing the overall complexity. In fact, a code base with many small pieces often makes it hard to discern what purpose any one piece of data or code serves and hard to find the parts of code relevant to a given feature.</p>
+<p>So while object-oriented design aims to bring clarity to your code as long as you correctly delegate responsibilities amongst a properly designed set of objects, the object-oriented design process can itself often be burdensome and fraught with conjecture, and the typical resulting program structures become excessively fractured.</p>
+<h4 id="-3-objects-make-it-difficult-to-track-which-code-accesses-which-data-"><strong>3. Objects make it difficult to track which code accesses which data</strong></h4>
+<p>Understanding a program ultimately boils down to understanding its data and how that data gets transformed. The easier it is to reason about the data, the easier it is to reason about the program. Whether adding features or fixing bugs, the programmer needs to be able to determine which code affects a given piece of data and, from the other perspective, which data is affected by a given piece of code.</p>
+<p>In an object-oriented program, the more connected the objects, the more difficult it is to make these determinations. Although object encapsulation may keep direct access to a piece of data private, any indirectly connected object may have indirect access through some path of public method calls. For example, when debugging why a value is being incorrectly set, identifying all relevant paths of code may require a lot of detective work. In contrast, in a strictly procedural program, identifying all paths of code that may affect a piece of data usually requires considering many fewer possibilities (as long as the program does not use global variables recklessly).</p>
+<p><span id="page-44-0"></span><img src="_page_44_Picture_0.jpeg" alt=""></p>
+<h1 id="data-oriented-design">Data-oriented design</h1>
+<p>The term data-oriented design (DOD) was coined in the 2000&#39;s to describe a set of ideas emerging at the time among some game programmers and others interested in high performance software. No one source has the authoritative definition of data-oriented design, but these resources perhaps come the closest:</p>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=rX0ItVEVjHc">&quot;Data-Oriented Design and C++&quot;</a> and <a href="https://www.youtube.com/watch?v=u8B3j8rqYMw">Building a Data-Oriented Future:</a> Two talks by Mike Acton</li>
+<li><a href="http://www.dataorienteddesign.com/dodbook/">Data-Oriented Design:</a> A book by Richard Fabian</li>
+<li><a href="https://github.com/dbartolini/data-oriented-design">Data-Oriented Design Resources:</a> A collection of links about DOD</li>
+</ul>
+<p>Here, rather than give a theoretical account, we&#39;ll just distill DOD into several points of practical advice.</p>
+<h2 id="-design-your-data-before-designing-your-code-"><strong>Design your data before designing your code</strong></h2>
+<p>The central premise of DOD is that <strong>data is at least as important as code</strong>. At both the macro and micro level, <strong>programs are ultimately about transforming and producing data</strong>.</p>
+<p>So the nature of your data should dictate the structure of your code rather than the other way around. This is true not just at the beginning of a project but at all stages, so when adding or changing features, you should first reevaluate the structure of your data before restructuring the code.</p>
+<p>Note that this conflicts with object-oriented design, where objects inextricably link data and code together. Mixing the design of data with concerns about code complicates the design process and often leads to suboptimal design choices. Conversely, allowing data the freedom to change without immediate concern for code simplifies the design process and typically produces simpler, more optimal data.</p>
+<h2 id="-prefer-simple-data-"><strong>Prefer simple data</strong></h2>
+<p>As a general tendency, simple data leads to simple and efficient code. In particular, you should favor arrays over hierarchical structures and graph structures: Arrays are the simplest way to store many elements of data, and sequentially looping through flat arrays is the most efficient way to access memory.</p>
+<p>You should also be careful about creating connections between elements of data (<em>via</em> pointers and array indexes) that aren&#39;t necessary. Correctly maintaining these connections complicates your code, and traversing connections requires suboptimal random lookups.</p>
+<p><img src="_page_45_Picture_0.jpeg" alt=""></p>
+<h2 id="-think-of-your-code-as-a-data-pipeline-"><strong>Think of your code as a data pipeline</strong></h2>
+<p>Once you have a rough draft design of your data, the next question is what transformations your data must undergo:</p>
+<ul>
+<li>In a server, client requests and database data are transformed into server responses.</li>
+<li>In a compiler, source code is transformed into machine code or some kind of intermediate code.</li>
+<li>In an audio encoder, audio data of one form is transformed into another.</li>
+<li>In a video game, the user input and game state of one tick is transformed into a new game state, which is then transformed into a new rendered frame.</li>
+</ul>
+<p>Of course, these macro-level transformations break down into a number of substeps, but the goal remains the same: For some beginning state of the data, you simply need to connect the dots to reach the expected end state. The code can then be naturally structured as a &quot;data pipeline&quot; in which each step transforms or produces data to be handed to later steps of the pipeline.</p>
+<p>This description of programming may sound too simple and obvious, but compared to other theories of how to make software, it offers great clarity. Once you have well-defined start and end points, figuring out exactly how to get from point A to B is a very concrete, tractable problem, and each separate transformation can be written and rewritten independently from the rest.</p>
+<p>This model makes working solutions not only easier to create but also easier to optimize:</p>
+<p>First, identifying bottlenecks in a sequential series of steps is as simple as profiling all the steps. A minority of steps will usually account for most of the cost, giving you a clear idea of where optimizations would be most impactful. Therefore, it&#39;s important to consider the cost vs gains when prioritizing your optimization efforts and <a href="https://blog.unity.com/engine-platform/profiling-in-unity-2021-lts-what-when-and-how">being pragmatic in your performance</a>  <a href="https://blog.unity.com/engine-platform/profiling-in-unity-2021-lts-what-when-and-how">optimization process</a>.</p>
+<p>Second, the pipeline model makes it easier to find optimization opportunities. Very often you will find cases where:</p>
+<ul>
+<li>Certain data should be transformed into an intermediate form that lends itself to more efficient processing by later steps.</li>
+<li>Data that is redundantly produced by multiple steps should instead be cached once in an earlier step.</li>
+<li>Separate steps that access the same data should wholly or partly be consolidated into fewer steps to reduce the overhead of repeated access.</li>
+<li>Some elements of data that are processed one-by-one should instead be processed <em>en masse</em>, which generally leads to more efficient memory access, less branching, and less function call overhead, among other efficiencies.</li>
+</ul>
+<p><img src="_page_46_Picture_0.jpeg" alt=""></p>
+<p>Lastly, a data pipeline lends itself to parallelization: As long as you have clear separation of which steps touch which data, it&#39;s easy to identify which steps can be safely processed concurrently.</p>
+<h2 id="-measure-estimate-and-budget-performance-at-all-stages-of-development-"><strong>Measure, estimate, and budget performance at all stages of development</strong></h2>
+<p>A common mistake in game development is waiting to fix performance at the end of a project. Late optimization work is both costly and risky because:</p>
+<ul>
+<li>Many optimizations are harder to do late in the project.</li>
+<li>Late optimization takes an unpredictable amount of time and effort.</li>
+<li>Late optimization might fail to achieve acceptable results.</li>
+</ul>
+<p>Instead of waiting, the healthier practice is to concern yourself with performance from the very beginning of a project. Even if you&#39;re willing to tolerate suboptimal performance throughout your prototyping and beta phases, you should at the very least continuously reestimate the needs of your project and establish a performance budget. How much memory, CPU, GPU, storage space, and network bandwidth can you afford for each feature and for the game as a whole? Do the target numbers differ across your target platforms? These are questions that you should reassess at all stages of development.</p>
+<p><img src="_page_46_Picture_9.jpeg" alt=""></p>
+<p>To learn more about profiling check out our 70+ page <em><a href="https://unity.com/resources/ultimate-guide-to-profiling-unity-games">Ultimate guide to profiling Unity games</a></em> which brings together advanced knowledge and advice from external and in-house Unity experts on how to profile an application in Unity, manage its memory, and optimize its power consumption from start to finish.</p>
+<p><img src="_page_47_Picture_0.jpeg" alt=""></p>
+<h2 id="-prefer-specific-solutions-over-abstractions-"><strong>Prefer specific solutions over abstractions</strong></h2>
+<p>In programming, &quot;abstractions&quot; are generalized solutions that hide internal details behind simplified exteriors. Abstractions come in various forms, including functions, objects, libraries, frameworks, programming languages, and even game engines.</p>
+<p>While some degree of abstraction is sensible, excessive enthusiasm for abstraction can cause problems:</p>
+<ul>
+<li>A major reason to use off-the-shelf abstractions, like libraries, frameworks, or game engines, is that they can spare you from difficult and time-consuming implementation work. However, a cost of this convenience is often awkward mismatches between the provided solution and your specific needs. Ultimately, bending an off-the-shelf abstraction to your purposes may actually end up being more work than just writing your own specific solution.</li>
+<li>Abstractions often incur many hidden performance costs, like heavy memory footprint or CPU overhead, costs which are paid ultimately for the sake of features you may not even be using.</li>
+<li>In your own implementations, it&#39;s tempting to create an abstract solution that generalizes beyond your current needs in anticipation that it may be useful later in the project. More often than not, however, this kind of speculative work ends up creating more work than it solves, and the resulting solution is often suboptimal (or at least hard to optimize). Abstractions, in fact, may actually make change <em>more</em> difficult when you later find that your requirements no longer neatly fit the abstraction.</li>
+</ul>
+<p>Instead of worrying about how your requirements might change later, you&#39;re almost always better off solving for your current requirements as you currently understand them. Embrace iteration: You won&#39;t fully understand your problem until you&#39;ve tried to solve it, and you can simply wait to change your code later after your requirements actually change. What they say about writing in general applies to writing code: Good writing is rewriting. And what makes code easy to rewrite better than anything else? Simplicity.</p>
+<p>If you feel tempted to abstract, the best advice is to wait: Solve for at least a few specific cases first, and only then consider combining their solutions into an abstraction. As Richard Fabian <a href="https://www.dataorienteddesign.com/dodbook/node2.html#:~:text=Data%2Doriented%20design%20is%20current,handle%20whatever%20will%20come%20along.">writes:</a></p>
+<p>&quot;Data-oriented design is current. It is not a representation of the history of a problem or a solution that has been brought up to date, nor is it the future, with generic solutions made up to handle whatever will come along. Holding onto the past will interfere with flexibility, and looking to the future is generally fruitless as programmers are not fortune tellers. It&#39;s the opinion of the author that future-proof systems rarely are.&quot;</p>
+<p>Summed up as a warning: <em>premature abstraction is the root of all evil</em>.</p>
+<p><img src="_page_48_Picture_0.jpeg" alt=""></p>
+<p><a href="https://unity.com/">unity.com</a></p>
+</body></html>
